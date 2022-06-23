@@ -20,5 +20,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\GuestApi'], function(){
     Route::post('login',[LoginController::class,'login']);
+    Route::post('signup', [LoginController::class,'SignUp']);
+    Route::get('verify-account/{validate_string}', [LoginController::class,'VerifyAccount'])->name('verifyAccount');
 
 });
