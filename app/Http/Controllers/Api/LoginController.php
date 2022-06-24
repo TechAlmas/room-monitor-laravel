@@ -36,11 +36,7 @@ class LoginController extends Controller
 				)
 			);
 			if ($validator->fails()){
-				$response["status"]		=	"error";
-				$response["msg"]		=	"Validation Errors";
-				$response["data"]		=	(object)array();
-				$response['errors']     =   $validator->errors()->getMessages();
-				$response["http_code"]	=	401;
+				$response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
 			}else{
 				$email	=	$request->input("email");
 				$user_details			=	User::where(function ($query) use($email){
@@ -127,11 +123,7 @@ class LoginController extends Controller
 			);
 		
 			if ($validator->fails()){
-				$response["status"]		=	"error";
-				$response["msg"]		=	"Validation Errors";
-				$response["data"]		=	(object)array();
-				$response['errors']     =   $validator->errors()->getMessages();
-				$response["http_code"]	=	401;
+				$response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
 			}else{
 				$password     =     Str::random(8);
 
@@ -158,7 +150,7 @@ class LoginController extends Controller
 						'username'   => $obj->user_name,
 						'email'      => $obj->email,
 						'password'   => $password,
-						'verifyLink' => route('verifyAccount',$obj->validate_string)
+						'verifyLink' => env('FRONT_END_URL').'/verify_account/'.$obj->validate_string
 					];
                     $subject 			=  "Verify account";
 					Mail::send('emails.verify_account', $emailData, function($message) use ($obj,$subject,$fromEmail) {
@@ -170,7 +162,7 @@ class LoginController extends Controller
 				$response				=	array();
 				$response["status"]		=	"success";
 				$response["data"]		=	array("validate_string"=>$obj->validate_string);
-				$response["msg"]		=	trans("Verification email has been sent on your registered email.");
+				$response["msg"]		=	trans("Verification email has been sent on your registered email.Please verify your email.");
 				$response["http_code"]	=	200;
 				return response()->json($response,200);
 			}
@@ -206,7 +198,7 @@ class LoginController extends Controller
 						$user_details			=	User::where("id",$user_details->id)->select("id","name","email","phone_number","user_role","user_name","vehicle_registration_number")->first();
 						
 						$response["status"]		=	"success";
-						$response["msg"]		=	trans("Your profile has been verified successfully.");
+						$response["msg"]		=	trans("Your profile has been verified successfully.Please login to access your account.");
 						$response["data"]		=	$user_details;
 						$response["http_code"]	=	200;
 						return json_encode($response);
