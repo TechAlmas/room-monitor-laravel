@@ -71,6 +71,9 @@ class AlarmsController extends Controller{
                     $obj->intervention_time 						    =  $request->input('intervention_time');
                     $obj->intervention_type 						    =  $request->input('intervention_type');
                     $obj->intervention_concierges 						=  $request->input('intervention_concierges');
+                    $obj->status 			    =  'pending';
+                }else{
+                  $obj->status 			    =  'ongoing';
                 }
 
                
