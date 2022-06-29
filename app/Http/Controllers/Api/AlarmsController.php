@@ -93,7 +93,7 @@ class AlarmsController extends Controller{
                     $response["data"]		=	(object)array();
                     $response["msg"]		=	trans("Something Went Wrong.");
                     $response["http_code"]	=	401;
-                    return response()->json($response,401);
+                    return response()->json($response,200);
                }
 				
 			}
@@ -128,7 +128,7 @@ class AlarmsController extends Controller{
             $response["data"]		=	(object)array();
             $response["msg"]		=	trans("The user id field is required.");
             $response["http_code"]	=	401;
-            return response()->json($response,401);
+            return response()->json($response,200);
 
         }
 
