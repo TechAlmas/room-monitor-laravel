@@ -38,9 +38,9 @@ class AlarmsController extends Controller{
 					"phone_number.required"    				 => trans("The phone number field is required"),
 					"phone_number.numeric"      			 => trans("The phone number must be numeric"),
 					"zipcode.required"           			 => trans("The zipcode field is required"),
-                    "city.required"           				 => trans("The city field is required"),
-                    "address.required"           		     => trans("The address field is required"),
-                    "user_id.required"           		     => trans("The user id field is required"),
+          "city.required"           				 => trans("The city field is required"),
+          "address.required"           		     => trans("The address field is required"),
+          "user_id.required"           		     => trans("The user id field is required"),
 					
 				)
 			);
@@ -51,9 +51,9 @@ class AlarmsController extends Controller{
 				$password     =     Str::random(8);
                 DB::beginTransaction();
                 $obj 									=  new MasterAlarm;
-				$obj->user_id	 						=  $request->input('user_id');
-				$obj->name 								=  $request->input('name');
-				$obj->phone_number 						=  $request->input('phone_number');
+				        $obj->user_id	 						=  $request->input('user_id');
+				        $obj->name 								=  $request->input('name');
+				        $obj->phone_number 						=  $request->input('phone_number');
                 $obj->zipcode 						    =  $request->input('zipcode');
                 $obj->city 						        =  $request->input('city');
                 $obj->address 						    =  $request->input('address');
@@ -77,8 +77,8 @@ class AlarmsController extends Controller{
                 }
 
                
-				$obj->save();
-				$userId  = $obj->id;
+				        $obj->save();
+				        $userId  = $obj->id;
                 DB::commit();
 
                if($userId){
@@ -106,8 +106,26 @@ class AlarmsController extends Controller{
 
 
 	public function displayAlarms(Request $request){
-        if(!empty($request->user_id)){
-            $getAlarmnsData = MasterAlarm::where('user_id',$request->user_id)->orderBy('created_at','DESC')->get();
+    if(!empty($request->user_id)){
+          $getAlarmnsData = MasterAlarm::query();
+          $getUserData = User::where('id',$request->user_id)->first();
+          
+          if($getUserData->user_role == 'agent'){
+            $getAlarmnsData->where('intervention_concierges',$request->user_id);
+            if(!empty($request->type) &&  $request->type == 'submitted'){
+              $getAlarmnsData->whereIn('status',['submitted','approved','pending']);
+            }else{
+              $getAlarmnsData->where('status','ongoing');
+            }
+          }else{
+            $getAlarmnsData->where('user_id',$request->user_id);
+            if(!empty($request->type) &&  $request->type == 'submitted'){
+              $getAlarmnsData->whereIn('status',['submitted','approved','pending']);
+            }else{
+              $getAlarmnsData->whereIn('status',['ongoing','pending']);
+            }
+          }
+          $getAlarmnsData = $getAlarmnsData->orderBy('updated_at', 'asc')->get();
             if($getAlarmnsData->isNotEmpty()){
                 $response				=	array();
                 $response["status"]		=	"success";
@@ -135,6 +153,118 @@ class AlarmsController extends Controller{
 
         }
 
+	}
+
+  public function getReportDetails(Request $request,$id=0){
+    if(!empty($id)){
+          $getReportDetails = MasterAlarm::where('id',$id)->first();
+            if(!empty($getReportDetails)){
+                $response				=	array();
+                $response["status"]		=	"success";
+                $response["data"]		=	$getReportDetails;
+                $response["msg"]		=	trans("Data Found Successfully.");
+                $response["http_code"]	=	200;
+                return response()->json($response,200);
+            }else{
+
+                $response				=	array();
+                $response["status"]		=	"success";
+                $response["data"]		=	(object)array();
+                $response["msg"]		=	trans("No Record Found");
+                $response["http_code"]	=	200;
+                return response()->json($response,200);
+            }
+
+        }else{
+            $response				=	array();
+            $response["status"]		=	"error";
+            $response["data"]		=	(object)array();
+            $response["msg"]		=	trans("The report id field is required.");
+            $response["http_code"]	=	401;
+            return response()->json($response,200);
+
+        }
+
+	}
+
+  public function startReport(Request $request){
+		$formData	=	$request->all();
+		$response	=	array();
+		if(!empty($formData)){
+			$validator 					=	Validator::make(
+				$request->all(),
+				array(
+					'name'							=> 'required',
+					'zipcode'                       => 'required',
+					'city'				            => 'required',
+					'address'					    => 'required',
+          'time_called'                       => 'required',
+          'incident_date'       => 'required',
+          'incident_details'    => 'required'
+
+				),
+				array(
+					"name.required"      				 	 => trans("The name field is required"),
+					"zipcode.required"           			 => trans("The zipcode field is required"),
+          "city.required"           				 => trans("The city field is required"),
+          "address.required"           		     => trans("The address field is required"),
+          "time_called.required"           		     => trans("The time field is required"),
+          "incident_date.required"           		     => trans("The date field is required"),
+          "incident_details.required"           		     => trans("The details field is required")
+					
+				)
+			);
+		
+			if ($validator->fails()){
+				$response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
+			}else{
+				$getReportData = MasterAlarm::where('id',$request->id)->first();
+        if(empty($getReportData)){
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("Report does not exists.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+        }
+                DB::beginTransaction();
+                $obj 									=  MasterAlarm::find($getReportData->id);
+				        $obj->name 								=  $request->input('name');
+                $obj->zipcode 						    =  $request->input('zipcode');
+                $obj->city 						        =  $request->input('city');
+                $obj->address 						    =  $request->input('address');
+                $obj->time_called 						    =  $request->input('time_called');
+                $obj->incident_date 						    =  $request->input('incident_date');
+                $obj->incident_details 						    =  $request->input('incident_details');
+                $obj->status                  = 'submitted';
+
+               
+				$obj->save();
+				$userId  = $obj->id;
+                
+
+               if($userId){
+                   DB::commit();
+                   $response				=	array();
+                   $response["status"]		=	"success";
+                   $response["data"]		=	$obj;
+                   $response["msg"]		=	trans("Report details has been received.");
+                   $response["http_code"]	=	200;
+                   return response()->json($response,200);
+               }else{
+                    DB::rollBack();
+                    DB::commit();
+                    $response				=	array();
+                    $response["status"]		=	"error";
+                    $response["data"]		=	(object)array();
+                    $response["msg"]		=	trans("Something Went Wrong.");
+                    $response["http_code"]	=	401;
+                    return response()->json($response,200);
+               }
+				
+			}
+		}
+		return json_encode($response);
 	}
     public function datatableTestData(Request $request){
         $returnData = [

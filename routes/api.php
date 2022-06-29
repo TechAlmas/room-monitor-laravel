@@ -30,6 +30,8 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\GuestApi']
 Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'], function(){
     Route::post('create-report',[AlarmsController::class,'createReport']);
     Route::get('display-alarms', [AlarmsController::class,'displayAlarms']);
+    Route::get('get-report-details/{id}', [AlarmsController::class,'getReportDetails']);
+    Route::post('start-report',[AlarmsController::class,'startReport']);
     
 
 });
