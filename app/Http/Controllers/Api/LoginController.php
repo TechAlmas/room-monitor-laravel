@@ -105,6 +105,7 @@ class LoginController extends Controller
 					'email' 						=> 'required|email|unique:users',
 					'phone_number' 					=> 'required|numeric',
 					'vehicle_registration_number'   => 'required',
+					'user_role'                     => 'required'
 					// 'device_type'				=> 'required',
 					// 'device_id'					=> 'required',
 				),
@@ -117,7 +118,8 @@ class LoginController extends Controller
 					"email.unique"             				 => trans("The email has already been taken"),
 					"phone_number.required"    				 => trans("The phone number field is required"),
 					"phone_number.numeric"      			 => trans("The phone number must be numeric"),
-					"vehicle_registration_number.required"    => trans("The vehicle registration number field is required"),
+					"vehicle_registration_number.required"   => trans("The vehicle registration number field is required"),
+					"user_role.required"    				 => trans("The user role field is required"),
 					
 				)
 			);
@@ -128,7 +130,7 @@ class LoginController extends Controller
 				$password     =     Str::random(8);
 
                 $obj 									=  new User;
-				$obj->user_role	 						=  "subscriber";
+				$obj->user_role	 						=  $request->input('user_role');
 				$obj->user_name 						=  $request->input('user_name');
 				$obj->name 								=  $request->input('name');
 				$obj->email 							=  $request->input('email');
