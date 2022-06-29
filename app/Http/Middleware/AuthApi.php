@@ -22,6 +22,8 @@ class AuthApi
     * @return mixed
     */
     public function handle($request, Closure $next){
+		header_remove('Access-Control-Allow-Credentials');
+      	header_remove('Access-Control-Allow-Origin');
 		if(!empty($request->header('Accept-Language'))){
 			App::setLocale($request->header('Accept-Language'));
 		}else{
