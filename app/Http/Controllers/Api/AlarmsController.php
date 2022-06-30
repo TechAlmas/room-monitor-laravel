@@ -118,8 +118,14 @@ class AlarmsController extends Controller{
             }else{
               $getAlarmnsData->where('status','ongoing');
             }
-          }else{
+          }else if($getUserData->user_role == 'user'){
             $getAlarmnsData->where('user_id',$request->user_id);
+            if(!empty($request->type) &&  $request->type == 'submitted'){
+              $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
+            }else{
+              $getAlarmnsData->whereIn('status',['ongoing','pending']);
+            }
+          }else{
             if(!empty($request->type) &&  $request->type == 'submitted'){
               $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
             }else{
