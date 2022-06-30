@@ -34,6 +34,9 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::post('start-report',[AlarmsController::class,'startReport']);
     Route::post('upload-report-files/{id}',[AlarmsController::class,'updateReportFiles']);
     Route::get('remove-uploaded-report-file/{fileId}',[AlarmsController::class,'removeUploadedFile']);
+    Route::get('approve-report/{reportId}',[AlarmsController::class,'approveReport']);
+    Route::post('reject-report/{reportId}',[AlarmsController::class,'rejectReport']);
+    Route::get('dropdown-managers',[AlarmsController::class,'dropdownManagers']);
     
 
 });

@@ -72,9 +72,9 @@ class AlarmsController extends Controller{
                     $obj->intervention_time 						    =  $request->input('intervention_time');
                     $obj->intervention_type 						    =  $request->input('intervention_type');
                     $obj->intervention_concierges 						=  $request->input('intervention_concierges');
-                    $obj->status 			    =  'pending';
-                }else{
-                  $obj->status 			    =  'ongoing';
+                    $obj->status 			    =  'ongoing';
+                  }else{
+                  $obj->status 			    =  'pending';
                 }
 
                
@@ -114,19 +114,19 @@ class AlarmsController extends Controller{
           if($getUserData->user_role == 'agent'){
             $getAlarmnsData->where('intervention_concierges',$request->user_id);
             if(!empty($request->type) &&  $request->type == 'submitted'){
-              $getAlarmnsData->whereIn('status',['submitted','approved','pending']);
+              $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
             }else{
               $getAlarmnsData->where('status','ongoing');
             }
           }else{
             $getAlarmnsData->where('user_id',$request->user_id);
             if(!empty($request->type) &&  $request->type == 'submitted'){
-              $getAlarmnsData->whereIn('status',['submitted','approved','pending']);
+              $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
             }else{
               $getAlarmnsData->whereIn('status',['ongoing','pending']);
             }
           }
-          $getAlarmnsData = $getAlarmnsData->orderBy('updated_at', 'asc')->get();
+          $getAlarmnsData = $getAlarmnsData->orderBy('updated_at', 'desc')->get();
             if($getAlarmnsData->isNotEmpty()){
                 $response				=	array();
                 $response["status"]		=	"success";
@@ -160,7 +160,8 @@ class AlarmsController extends Controller{
     if(!empty($id)){
           $getReportDetails = MasterAlarm::where('id',$id)->first();
             if(!empty($getReportDetails)){
-
+              $getReportDetails->created_date = date('d-m-Y',strtotime($getReportDetails->created_at));
+              $getReportDetails->created_time = date('H:i',strtotime($getReportDetails->created_at));
               $getuploadedFiles = ReportFile::where('report_id',$getReportDetails->id)->get();
               if($getuploadedFiles->isNotEmpty()){
                 foreach($getuploadedFiles as $uploadedFileVal){
@@ -276,16 +277,83 @@ class AlarmsController extends Controller{
 		return json_encode($response);
 	}
 
+  public function approveReport(Request $request,$reportId = 0){
+    if(!empty($reportId)){
+      $getReportDetails = MasterAlarm::where('id',$reportId)->first();
+      if(!empty($getReportDetails)){
+        MasterAlarm::where('id',$reportId)->update(['status'=>'approved']);
+        $response				=	array();
+        $response["status"]		=	"success";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("Report approved successfully.");
+        $response["http_code"]	=	200;
+        return response()->json($response,200);
+      }else{
+        $response				=	array();
+        $response["status"]		=	"success";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("Report does not exists.");
+        $response["http_code"]	=	200;
+        return response()->json($response,200);
+      }
+    }else{
+      $response				=	array();
+      $response["status"]		=	"error";
+      $response["data"]		=	(object)array();
+      $response["msg"]		=	trans("The report id field is required.");
+      $response["http_code"]	=	401;
+      return response()->json($response,200);
+    }
+  }
+  public function rejectReport(Request $request,$reportId = 0){
+    if(!empty($reportId)){
+      $getReportDetails = MasterAlarm::where('id',$reportId)->first();
+      if(!empty($getReportDetails)){
+        if(!empty($request->rejection_details)){
+
+          MasterAlarm::where('id',$reportId)->update(['status'=>'rejected','rejection_details' => $request->rejection_details]);
+          $response				=	array();
+          $response["status"]		=	"success";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("Report rejected successfully.");
+          $response["http_code"]	=	200;
+          return response()->json($response,200);
+        }else{
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("The rejection details field is required.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+        }
+      }else{
+        $response				=	array();
+        $response["status"]		=	"success";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("Report does not exists.");
+        $response["http_code"]	=	200;
+        return response()->json($response,200);
+      }
+    }else{
+      $response				=	array();
+      $response["status"]		=	"error";
+      $response["data"]		=	(object)array();
+      $response["msg"]		=	trans("The report id field is required.");
+      $response["http_code"]	=	401;
+      return response()->json($response,200);
+    }
+  }
+
   public function updateReportFiles(Request $request,$id = 0){
     if(!empty($id)){
       if(!empty($request->report_files)){
         $getReportDetails = MasterAlarm::where('id',$id)->first();
         if(!empty($getReportDetails)){
-          foreach($request->report_files as $fileVal){
+          foreach($request->report_files as $fileKey => $fileVal){
             $obj                  =    new ReportFile;
             $extension 					=	 $fileVal->getClientOriginalExtension();
             $original 					=	 $fileVal->getClientOriginalName();
-            $fileName					=	time().'-report-video.'.$extension;
+            $fileName					=	time().'-report-video.'.$fileKey.$extension;
             $folderName     			= 	strtoupper(date('M'). date('Y'))."/";
             $folderPath					=	public_path('/uploads/reports/').$folderName;
             if(!File::exists($folderPath)) {
@@ -484,6 +552,18 @@ class AlarmsController extends Controller{
         ];
         return $returnData;
           
+    }
+
+    public function dropdownManagers(){
+      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->get();
+
+      $response				=	array();
+      $response["status"]		=	"success";
+      $response["data"]		=	(object)array();
+      $response['agents_list'] = $agentsList;
+      $response["msg"]		=	trans("Data Found");
+      $response["http_code"]	=	200;
+      return response()->json($response,200);
     }
 
 }
