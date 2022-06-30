@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\MasterAlarm;
+use App\Models\ReportFile;
 use Illuminate\Support\Facades\Auth;
 use Str,Mail;
 use Validator; 
@@ -159,9 +160,17 @@ class AlarmsController extends Controller{
     if(!empty($id)){
           $getReportDetails = MasterAlarm::where('id',$id)->first();
             if(!empty($getReportDetails)){
+
+              $getuploadedFiles = ReportFile::where('report_id',$getReportDetails->id)->get();
+              if($getuploadedFiles->isNotEmpty()){
+                foreach($getuploadedFiles as $uploadedFileVal){
+                  $uploadedFileVal->file_url = url('/uploads/reports').'/'.$uploadedFileVal->file;
+                }
+              }
                 $response				=	array();
                 $response["status"]		=	"success";
                 $response["data"]		=	$getReportDetails;
+                $response['uploaded_files'] = $getuploadedFiles;
                 $response["msg"]		=	trans("Data Found Successfully.");
                 $response["http_code"]	=	200;
                 return response()->json($response,200);
@@ -266,6 +275,122 @@ class AlarmsController extends Controller{
 		}
 		return json_encode($response);
 	}
+
+  public function updateReportFiles(Request $request,$id = 0){
+    if(!empty($id)){
+      if(!empty($request->report_files)){
+        $getReportDetails = MasterAlarm::where('id',$id)->first();
+        if(!empty($getReportDetails)){
+          foreach($request->report_files as $fileVal){
+            $obj                  =    new ReportFile;
+            $extension 					=	 $fileVal->getClientOriginalExtension();
+            $original 					=	 $fileVal->getClientOriginalName();
+            $fileName					=	time().'-report-video.'.$extension;
+            $folderName     			= 	strtoupper(date('M'). date('Y'))."/";
+            $folderPath					=	public_path('/uploads/reports/').$folderName;
+            if(!File::exists($folderPath)) {
+              File::makeDirectory($folderPath, $mode = 0777,true);
+            }
+            if($fileVal->move($folderPath, $fileName)){
+              $obj->report_id   = $getReportDetails->id;
+              $obj->file				= $folderName.$fileName;
+              $obj->file_name		= $original;
+              $obj->save();
+            }else{
+              $response				=	array();
+              $response["status"]		=	"error";
+              $response["data"]		=	(object)array();
+              $response["msg"]		=	trans("Something went wrong while uploading the files.");
+              $response["http_code"]	=	401;
+              return response()->json($response,200);
+            }
+          }
+
+          $getuploadedFiles = ReportFile::where('report_id',$getReportDetails->id)->get();
+          if($getuploadedFiles->isNotEmpty()){
+            foreach($getuploadedFiles as $uploadedFileVal){
+              $uploadedFileVal->file_url = url('/uploads/reports').'/'.$uploadedFileVal->file;
+            }
+            $response				=	array();
+            $response["status"]		=	"success";
+            $response["data"]		=	$getuploadedFiles;
+            $response["msg"]		=	trans("Files uploaded successfully.");
+            $response["http_code"]	=	200;
+            return response()->json($response,200);
+
+          }
+        }else{
+
+            $response				=	array();
+            $response["status"]		=	"success";
+            $response["data"]		=	(object)array();
+            $response["msg"]		=	trans("Report does not exists.");
+            $response["http_code"]	=	200;
+            return response()->json($response,200);
+        }
+       
+      }else{
+        $response				=	array();
+        $response["status"]		=	"error";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("The files field is required.");
+        $response["http_code"]	=	401;
+        return response()->json($response,200);
+      }
+    }else{
+      $response				=	array();
+      $response["status"]		=	"error";
+      $response["data"]		=	(object)array();
+      $response["msg"]		=	trans("The report id field is required.");
+      $response["http_code"]	=	401;
+      return response()->json($response,200);
+    }
+    
+  }
+
+  public function removeUploadedFile(Request $request,$fileId = 0){
+    if(!empty($fileId)){
+      $checkIfFileExists = ReportFile::where('id',$fileId)->first();
+      if($checkIfFileExists){
+        ReportFile::where('id',$fileId)->delete();
+        $filePath					=	public_path('/uploads/reports/').$checkIfFileExists->file;
+
+        //Remove uploaded file from directory as well
+        if(\File::exists($filePath)){
+
+          \File::delete($filePath);
+      
+        }
+
+        $getuploadedFiles = ReportFile::where('report_id',$checkIfFileExists->report_id)->get();
+        if($getuploadedFiles->isNotEmpty()){
+          foreach($getuploadedFiles as $uploadedFileVal){
+            $uploadedFileVal->file_url = url('/uploads/reports').'/'.$uploadedFileVal->file;
+          }
+        }
+        $response				=	array();
+        $response["status"]		=	"success";
+        $response["data"]		=	$getuploadedFiles;
+        $response["msg"]		=	trans("File removed successfully.");
+        $response["http_code"]	=	200;
+        return response()->json($response,200);
+      }else{
+        $response				=	array();
+        $response["status"]		=	"error";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("File does not exists.");
+        $response["http_code"]	=	401;
+        return response()->json($response,200);
+      }
+    }else{
+      $response				=	array();
+      $response["status"]		=	"error";
+      $response["data"]		=	(object)array();
+      $response["msg"]		=	trans("The file id field is required.");
+      $response["http_code"]	=	401;
+      return response()->json($response,200);
+    }
+  }
     public function datatableTestData(Request $request){
         $returnData = [
             [

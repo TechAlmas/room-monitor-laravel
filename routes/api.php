@@ -32,6 +32,8 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::get('display-alarms', [AlarmsController::class,'displayAlarms']);
     Route::get('get-report-details/{id}', [AlarmsController::class,'getReportDetails']);
     Route::post('start-report',[AlarmsController::class,'startReport']);
+    Route::post('upload-report-files/{id}',[AlarmsController::class,'updateReportFiles']);
+    Route::get('remove-uploaded-report-file/{fileId}',[AlarmsController::class,'removeUploadedFile']);
     
 
 });
