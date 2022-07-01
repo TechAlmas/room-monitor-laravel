@@ -359,7 +359,7 @@ class AlarmsController extends Controller{
             $obj                  =    new ReportFile;
             $extension 					=	 $fileVal->getClientOriginalExtension();
             $original 					=	 $fileVal->getClientOriginalName();
-            $fileName					=	time().'-report-video.'.$fileKey.$extension;
+            $fileName					=	time().'-report-video'.$fileKey.'.'.$extension;
             $folderName     			= 	strtoupper(date('M'). date('Y'))."/";
             $folderPath					=	public_path('/uploads/reports/').$folderName;
             if(!File::exists($folderPath)) {
