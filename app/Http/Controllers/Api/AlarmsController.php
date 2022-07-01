@@ -144,7 +144,7 @@ class AlarmsController extends Controller{
 
                 $response				=	array();
                 $response["status"]		=	"success";
-                $response["data"]		=	(object)array();
+                $response["data"]		=	array();
                 $response["msg"]		=	trans("No Records Found");
                 $response["http_code"]	=	200;
                 return response()->json($response,200);
@@ -561,7 +561,7 @@ class AlarmsController extends Controller{
     }
 
     public function dropdownManagers(){
-      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->get();
+      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
 
       $response				=	array();
       $response["status"]		=	"success";
