@@ -561,7 +561,7 @@ class AlarmsController extends Controller{
     }
 
     public function dropdownManagers(){
-      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->get();
+      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
 
       $response				=	array();
       $response["status"]		=	"success";
