@@ -144,7 +144,7 @@ class AlarmsController extends Controller{
 
                 $response				=	array();
                 $response["status"]		=	"success";
-                $response["data"]		=	(object)array();
+                $response["data"]		=	array();
                 $response["msg"]		=	trans("No Records Found");
                 $response["http_code"]	=	200;
                 return response()->json($response,200);
