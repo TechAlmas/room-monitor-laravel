@@ -14,12 +14,7 @@ return new class extends Migration
     public function up()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('user_role');
-            $table->string('validate_string');
-            $table->string('vehicle_registration_number');
             $table->smallInteger('is_active')->tinyInteger('is_active')->default(1)->change();
-            $table->smallInteger('is_verified')->default(0);
-            $table->smallInteger('is_deleted')->default(0);
         });
     }
 
