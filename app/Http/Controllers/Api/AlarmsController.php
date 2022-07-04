@@ -111,14 +111,14 @@ class AlarmsController extends Controller{
           $getAlarmnsData = MasterAlarm::query();
           $getUserData = User::where('id',$request->user_id)->first();
           
-          if($getUserData->user_role == 'agent'){
+          if($getUserData->user_role == 'night_agents'){
             $getAlarmnsData->where('intervention_concierges',$request->user_id);
             if(!empty($request->type) &&  $request->type == 'submitted'){
               $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
             }else{
               $getAlarmnsData->where('status','ongoing');
             }
-          }else if($getUserData->user_role == 'user'){
+          }else if($getUserData->user_role == 'offices'){
             $getAlarmnsData->where('user_id',$request->user_id);
             if(!empty($request->type) &&  $request->type == 'submitted'){
               $getAlarmnsData->whereIn('status',['submitted','approved','rejected']);
@@ -561,7 +561,7 @@ class AlarmsController extends Controller{
     }
 
     public function dropdownManagers(){
-      $agentsList = User::where('user_role','agent')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
+      $agentsList = User::where('user_role','night_agents')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
 
       $response				=	array();
       $response["status"]		=	"success";
