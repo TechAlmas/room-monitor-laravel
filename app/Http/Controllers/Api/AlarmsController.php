@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\MasterAlarm;
+use App\Models\AlarmImport;
 use App\Models\ReportFile;
 use Illuminate\Support\Facades\Auth;
 use Str,Mail;
@@ -465,99 +466,89 @@ class AlarmsController extends Controller{
       return response()->json($response,200);
     }
   }
-    public function datatableTestData(Request $request){
-        $returnData = [
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "Hour",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "7",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ],
-            [
-              "Hour"=> "8",
-              "Types_of_Alarms"=> "Types of Alarms",
-              "Room_Name"=> "Room Name",
-              "User"=> "User",
-              "Alarms"=> "Alarms",
-              "Agent_Sent"=> "Agent Sent",
-              "Agent_Name"=> "Agent Name",
-              "Guest_Reached"=> "Guest Reached",
-              "Guest_Name"=> "Guest Name"
-            ]
-        ];
-        return $returnData;
+    public function addAlarmItem(Request $request){
+      $getLoggedInUserId = Auth::guard('api')->user()->id;
+      $formData	=	$request->all();
+      $response	=	array();
+      if(!empty($formData)){
+        $validator 					=	Validator::make(
+          $request->all(),
+          array(
+            'hour'							=> 'required',
+            'types_of_alarms'                       => 'required',
+            'room_name'				            => 'required',
+            'user'					    => 'required',
+            'alarms'                       => 'required',
+            'agent_sent'       => 'required',
+            'agent_name'    => 'required',
+            'guest_reached'    => 'required',
+            'guest_name'    => 'required',
+
+          ),
+          array(
+            "hour.required"      				 	 => trans("The hour field is required"),
+            "types_of_alarms.required"      				 	 => trans("The types_of_alarms field is required"),
+            "room_name.required"      				 	 => trans("The room_name field is required"),
+            "user.required"      				 	 => trans("The user field is required"),
+            "alarms.required"      				 	 => trans("The alarms field is required"),
+            "agent_sent.required"      				 	 => trans("The agent_sent field is required"),
+            "agent_name.required"      				 	 => trans("The agent_name field is required"),
+            "guest_reached.required"      				 	 => trans("The guest_reached field is required"),
+            "guest_name.required"      				 	 => trans("The guest_name field is required"),
+           
+            
+          )
+        );
+      
+        if ($validator->fails()){
+          $response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
+        }else{
           
+          DB::beginTransaction();
+          $obj 									=  new AlarmImport;
+          $obj->user_id         =  $getLoggedInUserId;
+          $obj->hour 								=  $request->input('hour');
+          $obj->types_of_alarms 								=  $request->input('types_of_alarms');
+          $obj->room_name 								=  $request->input('room_name');
+          $obj->user 								=  $request->input('user');
+          $obj->alarms 								=  $request->input('alarms');
+          $obj->agent_sent 								=  $request->input('agent_sent');
+          $obj->agent_name 								=  $request->input('agent_name');
+          $obj->guest_reached 								=  $request->input('guest_reached');
+          $obj->guest_name 								=  $request->input('guest_name');
+         
+          $obj->save();
+          $userId  = $obj->id;
+                  
+
+          if($userId){
+              DB::commit();
+              if(Auth::guard('api')->user()->user_role == 'admin'){
+
+                $getAlarmsData = AlarmImport::orderBy('updated_at','desc')->get();
+              }else{
+                $getAlarmsData = AlarmImport::where('user_id',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+              }
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	$getAlarmsData;
+              $response["msg"]		=	trans("Item added successfully.");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }else{
+                DB::rollBack();
+                DB::commit();
+                $response				=	array();
+                $response["status"]		=	"error";
+                $response["data"]		=	(object)array();
+                $response["msg"]		=	trans("Something Went Wrong.");
+                $response["http_code"]	=	401;
+                return response()->json($response,200);
+          }
+          
+        }
+      }
+      return json_encode($response);
     }
 
     public function dropdownManagers(){
@@ -571,5 +562,102 @@ class AlarmsController extends Controller{
       $response["http_code"]	=	200;
       return response()->json($response,200);
     }
+
+    public function fetchAlarms(Request $request){
+      $getLoggedInUserId = Auth::guard('api')->user()->id;
+      if(Auth::guard('api')->user()->user_role == 'admin'){
+
+        $getAlarmnsData = AlarmImport::orderBy('updated_at','desc')->get();
+      }else{
+        $getAlarmnsData = AlarmImport::where('user_id',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+      }
+     
+           
+      if($getAlarmnsData->isNotEmpty()){
+          $response				=	array();
+          $response["status"]		=	"success";
+          $response["data"]		=	$getAlarmnsData;
+          $response["msg"]		=	trans("Data Found Successfully.");
+          $response["http_code"]	=	200;
+          return response()->json($response,200);
+      }else{
+
+          $response				=	array();
+          $response["status"]		=	"success";
+          $response["data"]		=	array();
+          $response["msg"]		=	trans("No Records Found");
+          $response["http_code"]	=	200;
+          return response()->json($response,200);
+      }
+    }
+
+    public function uploadAlarmFile(Request $request)
+    {
+        $getLoggedInUserId = Auth::guard('api')->user()->id;
+        $path = $request->file('alarm_file')->getRealPath();
+        $records = array_map('str_getcsv', file($path));
+
+        if (! count($records) > 0) {
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("The file should have atleast one record to upload.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+        }
+        // Remove the header column
+        array_shift($records);
+
+        foreach ($records as $record) {
+            // Decode unwanted html entities
+            $record =  array_map("html_entity_decode", $record);
+
+            // Get the clean data
+            $this->rows[] = $this->clear_encoding_str($record);
+        }
+
+        foreach ($this->rows as $data) {
+          AlarmImport::create([
+              'user_id' => $getLoggedInUserId,
+               'hour' => !empty($data[0]) ? $data[0] : '',
+               'types_of_alarms' => !empty($data[1]) ? $data[1] : '',
+               'room_name' => !empty($data[2]) ? $data[2] : '',
+               'user' => !empty($data[3]) ? $data[3] : '',
+               'alarms' => !empty($data[4]) ? $data[4] : '',
+               'agent_sent' => !empty($data[5]) ? $data[5] : '',
+               'agent_name' => !empty($data[6]) ? $data[6] : '',
+               'guest_reached' => !empty($data[7]) ? $data[7] : '',
+               'guest_name' => !empty($data[8]) ? $data[8] : '',
+            ]);
+        }
+
+        if(Auth::guard('api')->user()->user_role == 'admin'){
+
+          $getAlarmsData = AlarmImport::orderBy('updated_at','desc')->get();
+        }else{
+          $getAlarmsData = AlarmImport::where('user_id',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+        }
+
+        $response				=	array();
+        $response["status"]		=	"success";
+        $response["data"]		=	$getAlarmsData;
+        $response["msg"]		=	trans("Alarms Uploaded Successfully.");
+        $response["http_code"]	=	200;
+        return response()->json($response,200);
+      
+    }
+    
+    private function clear_encoding_str($value)
+    {
+        if (is_array($value)) {
+            $clean = [];
+            foreach ($value as $key => $val) {
+                $clean[$key] = mb_convert_encoding($val, 'UTF-8', 'UTF-8');
+            }
+            return $clean;
+        }
+        return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+    }
+
 
 }
