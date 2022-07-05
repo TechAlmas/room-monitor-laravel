@@ -37,6 +37,9 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::get('approve-report/{reportId}',[AlarmsController::class,'approveReport']);
     Route::post('reject-report/{reportId}',[AlarmsController::class,'rejectReport']);
     Route::get('dropdown-managers',[AlarmsController::class,'dropdownManagers']);
+    Route::get('fetch-alarms',[AlarmsController::class,'fetchAlarms']);
+    Route::post('add-alarm-item',[AlarmsController::class,'addAlarmItem']);
+    Route::post('upload-alarm-file',[AlarmsController::class,'uploadAlarmFile']);
     
 
 });
