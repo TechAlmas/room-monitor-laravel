@@ -659,5 +659,75 @@ class AlarmsController extends Controller{
         return mb_convert_encoding($value, 'UTF-8', 'UTF-8');
     }
 
+    public function uploadUserImage(Request $request,$id = 0){
+      $getLoggedInUserId = Auth::guard('api')->user()->id;
+        if(!empty($request->user_image)){
+
+          $extension 					=	 $request->user_image->getClientOriginalExtension();
+          $original 					=	 $request->user_image->getClientOriginalName();
+          $fileName					=	time().'-user-image.'.$extension;
+          $folderName     			= 	strtoupper(date('M'). date('Y'))."/";
+          $folderPath					=	public_path('/uploads/users/').$folderName;
+          if(!File::exists($folderPath)) {
+            File::makeDirectory($folderPath, $mode = 0777,true);
+          }
+          if($request->user_image->move($folderPath, $fileName)){
+            $checkIfUserImageAlreadyExists = User::where('id',$getLoggedInUserId)->value('user_image');
+            if(!empty($checkIfUserImageAlreadyExists)){
+              $filePath					=	public_path('/uploads/users/').$checkIfUserImageAlreadyExists;
+
+              //Remove uploaded image from directory as well
+              if(\File::exists($filePath)){
+      
+                \File::delete($filePath);
+            
+              }
+      
+            }
+            User::where('id',$getLoggedInUserId)->update(['user_image'=>$folderName.$fileName]);
+           
+          }else{
+            $response				=	array();
+            $response["status"]		=	"error";
+            $response["data"]		=	(object)array();
+            $response["msg"]		=	trans("Something went wrong while uploading the image.");
+            $response["http_code"]	=	401;
+            return response()->json($response,200);
+          }
+            
+  
+            $getUserDetails = User::where('id',$getLoggedInUserId)->first();
+            if(!empty($getUserDetails)){
+              $getUserDetails->user_image_url = url('/uploads/users').'/'.$getUserDetails->user_image;
+            
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	$getUserDetails;
+              $response["msg"]		=	trans("Profile picture changed successfully.");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+  
+            }else{
+              $response				=	array();
+              $response["status"]		=	"error";
+              $response["data"]		=	(object)array();
+              $response["msg"]		=	trans("Something Went Wrong");
+              $response["http_code"]	=	401;
+              return response()->json($response,200);
+            }
+          
+         
+        }else{
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("The user image field is required.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+        }
+    
+      
+    }
+
 
 }

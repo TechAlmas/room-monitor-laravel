@@ -61,8 +61,10 @@ class LoginController extends Controller
 						}
 						else {
 							Auth::loginUsingId($user_details->id);
-							$user_details			=	User::where("id",$user_details->id)->select("id","user_name","name","email","phone_number","created_at","updated_at","is_active",'user_role')->first();
-
+							$user_details			=	User::where("id",$user_details->id)->select("id","user_name","name","email","phone_number","created_at","updated_at","is_active",'user_role','user_image')->first();
+							if(!empty($user_details->user_image)){
+								$user_details->user_image_url = url('/uploads/users').'/'.$user_details->user_image;
+							}
 							$user          			= 	 Auth::user();
 							$token        			=	$user->createToken('RoomMonitor app Personal Access Client')->accessToken;
 							$response["status"]		=	"success";
