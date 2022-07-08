@@ -40,6 +40,7 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::get('fetch-alarms',[AlarmsController::class,'fetchAlarms']);
     Route::post('add-alarm-item',[AlarmsController::class,'addAlarmItem']);
     Route::post('upload-alarm-file',[AlarmsController::class,'uploadAlarmFile']);
+    Route::post('upload-user-image',[AlarmsController::class,'uploadUserImage']);
     
 
 });
