@@ -39,8 +39,15 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::get('dropdown-managers',[AlarmsController::class,'dropdownManagers']);
     Route::get('fetch-alarms',[AlarmsController::class,'fetchAlarms']);
     Route::post('add-alarm-item',[AlarmsController::class,'addAlarmItem']);
+    Route::post('update-alarm-item',[AlarmsController::class,'updateAlarmItem']);
     Route::post('upload-alarm-file',[AlarmsController::class,'uploadAlarmFile']);
     Route::post('upload-user-image',[AlarmsController::class,'uploadUserImage']);
+    Route::get('alarm-detail',[AlarmsController::class,'fetchAlarmDetail']);
+
+    Route::get('fetch-users',[AlarmsController::class,'fetchUsers']);
+    Route::post('add-user',[AlarmsController::class,'addUser']);
+    Route::post('update-user',[AlarmsController::class,'updateUser']);
+    Route::get('user-detail',[AlarmsController::class,'fetchUserDetail']);
     
 
 });

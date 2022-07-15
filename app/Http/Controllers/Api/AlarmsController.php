@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Models\MasterAlarm;
 use App\Models\AlarmImport;
 use App\Models\ReportFile;
+use App\Models\Customer;
+use App\Models\Alarm;
 use Illuminate\Support\Facades\Auth;
 use Str,Mail;
 use Validator; 
@@ -474,29 +476,19 @@ class AlarmsController extends Controller{
         $validator 					=	Validator::make(
           $request->all(),
           array(
-            'hour'							=> 'required',
-            'types_of_alarms'                       => 'required',
-            'room_name'				            => 'required',
-            'user'					    => 'required',
-            'alarms'                       => 'required',
-            'agent_sent'       => 'required',
-            'agent_name'    => 'required',
-            'guest_reached'    => 'required',
-            'guest_name'    => 'required',
-
-          ),
-          array(
-            "hour.required"      				 	 => trans("The hour field is required"),
-            "types_of_alarms.required"      				 	 => trans("The types_of_alarms field is required"),
-            "room_name.required"      				 	 => trans("The room_name field is required"),
-            "user.required"      				 	 => trans("The user field is required"),
-            "alarms.required"      				 	 => trans("The alarms field is required"),
-            "agent_sent.required"      				 	 => trans("The agent_sent field is required"),
-            "agent_name.required"      				 	 => trans("The agent_name field is required"),
-            "guest_reached.required"      				 	 => trans("The guest_reached field is required"),
-            "guest_name.required"      				 	 => trans("The guest_name field is required"),
-           
-            
+            'date'							=> 'required',
+            'time'                       => 'required',
+            'customer_id'				            => 'required',
+            'room_name'					    => 'required',
+            'city'                       => 'required',
+            'address'       => 'required',
+            // 'agent_id'    => 'required',
+            'alarm_type'    => 'required',
+            'is_manager_contacted'    => 'required',
+            'is_guest_reached'    => 'required',
+            'comments'    => 'required',
+            'type'    => 'required',
+            'alarm_status'    => 'required',
           )
         );
       
@@ -505,17 +497,33 @@ class AlarmsController extends Controller{
         }else{
           
           DB::beginTransaction();
-          $obj 									=  new AlarmImport;
-          $obj->user_id         =  $getLoggedInUserId;
-          $obj->hour 								=  $request->input('hour');
-          $obj->types_of_alarms 								=  $request->input('types_of_alarms');
+          $obj 									=  new Alarm;
+          $obj->created_by         =  $getLoggedInUserId;
+          $obj->date 								=  date('Y-m-d',strtotime($request->input('date')));
+          $obj->time 								=  date('h:i A',strtotime($request->input('time')));
+          $obj->customer_id 								=  $request->input('customer_id');
           $obj->room_name 								=  $request->input('room_name');
-          $obj->user 								=  $request->input('user');
-          $obj->alarms 								=  $request->input('alarms');
-          $obj->agent_sent 								=  $request->input('agent_sent');
-          $obj->agent_name 								=  $request->input('agent_name');
-          $obj->guest_reached 								=  $request->input('guest_reached');
-          $obj->guest_name 								=  $request->input('guest_name');
+          $obj->city 								=  $request->input('city');
+          $obj->address 								=  $request->input('address');
+          $obj->agent_id 								=  !empty($request->input('agent_id')) ? $request->input('agent_id') : 0 ;
+          $obj->alarm_type 								=  $request->input('alarm_type');
+          $obj->is_manager_contacted 								=  $request->input('is_manager_contacted');
+          $obj->is_guest_reached 								=  $request->input('is_guest_reached');
+          $obj->comments 								=  $request->input('comments');
+          $obj->type 								=  $request->input('type');
+          $obj->alarm_status 								=  $request->input('alarm_status');
+
+          if($request->input('is_manager_contacted') == 1){
+            $obj->manager_details 								=  $request->input('manager_details');
+          }
+          if($request->input('is_guest_reached') == 1){
+            $obj->guest_details 								=  $request->input('guest_details');
+          }
+          if($request->input('alarm_type') == 'owner_call' || $request->input('alarm_type') == 'neighbor_call' || $request->input('alarm_type') == 'guest_call' ){
+            $obj->caller_name 								=  $request->input('caller_name');
+            $obj->caller_phone_number 								=  $request->input('caller_phone_number');
+            $obj->caller_location 								=  $request->input('caller_location');
+          }
          
           $obj->save();
           $userId  = $obj->id;
@@ -525,14 +533,19 @@ class AlarmsController extends Controller{
               DB::commit();
               if(Auth::guard('api')->user()->user_role == 'admin'){
 
-                $getAlarmsData = AlarmImport::orderBy('updated_at','desc')->get();
+                $getAlarmsData = Alarm::orderBy('updated_at','desc')->get();
               }else{
-                $getAlarmsData = AlarmImport::where('user_id',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+                $getAlarmsData = Alarm::where('created_by',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
               }
               $response				=	array();
               $response["status"]		=	"success";
               $response["data"]		=	$getAlarmsData;
-              $response["msg"]		=	trans("Item added successfully.");
+              if($obj->alarm_status == 'draft'){
+                $response["msg"]		=	trans("Item saved successfully.");
+              }else{
+
+                $response["msg"]		=	trans("Item added successfully.");
+              }
               $response["http_code"]	=	200;
               return response()->json($response,200);
           }else{
@@ -551,13 +564,123 @@ class AlarmsController extends Controller{
       return json_encode($response);
     }
 
+    public function updateAlarmItem(Request $request){
+      if(!empty($request->id)){
+          $getLoggedInUserId = Auth::guard('api')->user()->id;
+          $formData	=	$request->all();
+          $response	=	array();
+          if(!empty($formData)){
+            $validator 					=	Validator::make(
+              $request->all(),
+              array(
+                'date'							=> 'required',
+                'time'                       => 'required',
+                'customer_id'				            => 'required',
+                'room_name'					    => 'required',
+                'city'                       => 'required',
+                'address'       => 'required',
+                // 'agent_id'    => 'required',
+                'alarm_type'    => 'required',
+                'is_manager_contacted'    => 'required',
+                'is_guest_reached'    => 'required',
+                'comments'    => 'required',
+                'type'    => 'required',
+
+              )
+            );
+          
+            if ($validator->fails()){
+              $response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
+            }else{
+              
+              DB::beginTransaction();
+              $obj 									=  Alarm::find($request->id);
+              $obj->date 								=  date('Y-m-d',strtotime($request->input('date')));
+              $obj->time 								=  date('h:i A',strtotime($request->input('time')));
+              $obj->customer_id 								=  $request->input('customer_id');
+              $obj->room_name 								=  $request->input('room_name');
+              $obj->city 								=  $request->input('city');
+              $obj->address 								=  $request->input('address');
+              $obj->agent_id 								=  !empty($request->input('agent_id')) ? $request->input('agent_id') : 0 ;
+              $obj->alarm_type 								=  $request->input('alarm_type');
+              $obj->is_manager_contacted 								=  $request->input('is_manager_contacted');
+              $obj->is_guest_reached 								=  $request->input('is_guest_reached');
+              $obj->comments 								=  $request->input('comments');
+              $obj->type 								=  $request->input('type');
+
+              if($request->input('is_manager_contacted') == 1){
+                $obj->manager_details 								=  $request->input('manager_details');
+              }else{
+                $obj->manager_details 								=  "";
+              }
+              if($request->input('is_guest_reached') == 1){
+                $obj->guest_details 								=  $request->input('guest_details');
+              }else{
+                $obj->guest_details 								=  "";
+              }
+              if($request->input('alarm_type') == 'owner_call' || $request->input('alarm_type') == 'neighbor_call' || $request->input('alarm_type') == 'guest_call' ){
+                $obj->caller_name 								=  $request->input('caller_name');
+                $obj->caller_phone_number 								=  $request->input('caller_phone_number');
+                $obj->caller_location 								=  $request->input('caller_location');
+              }else{
+                $obj->caller_name 								=  "";
+                $obj->caller_phone_number 								=  "";
+                $obj->caller_location 								=  "";
+              }
+            
+              $obj->save();
+              $userId  = $obj->id;
+                      
+
+              if($userId){
+                  DB::commit();
+                  if(Auth::guard('api')->user()->user_role == 'admin'){
+
+                    $getAlarmsData = Alarm::orderBy('updated_at','desc')->get();
+                  }else{
+                    $getAlarmsData = Alarm::where('created_by',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+                  }
+                  $response				=	array();
+                  $response["status"]		=	"success";
+                  $response["data"]		=	$getAlarmsData;
+                  $response["msg"]		=	trans("Item updated successfully.");
+                  $response["http_code"]	=	200;
+                  return response()->json($response,200);
+              }else{
+                    DB::rollBack();
+                    DB::commit();
+                    $response				=	array();
+                    $response["status"]		=	"error";
+                    $response["data"]		=	(object)array();
+                    $response["msg"]		=	trans("Something Went Wrong.");
+                    $response["http_code"]	=	401;
+                    return response()->json($response,200);
+              }
+              
+            }
+          }
+          return json_encode($response);
+        
+      }else{
+        $response				=	array();
+        $response["status"]		=	"error";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("The alarm id field is required.");
+        $response["http_code"]	=	401;
+        return response()->json($response,200);
+
+      }
+    }
+
     public function dropdownManagers(){
       $agentsList = User::where('user_role','night_agents')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
-
+      $customersList = Customer::select('id','company_name as text')->get();
       $response				=	array();
       $response["status"]		=	"success";
       $response["data"]		=	(object)array();
       $response['agents_list'] = $agentsList;
+      $response['customers_list'] = $customersList;
+
       $response["msg"]		=	trans("Data Found");
       $response["http_code"]	=	200;
       return response()->json($response,200);
@@ -567,13 +690,20 @@ class AlarmsController extends Controller{
       $getLoggedInUserId = Auth::guard('api')->user()->id;
       if(Auth::guard('api')->user()->user_role == 'admin'){
 
-        $getAlarmnsData = AlarmImport::orderBy('updated_at','desc')->get();
+        $getAlarmnsData = Alarm::query();
       }else{
-        $getAlarmnsData = AlarmImport::where('user_id',$getLoggedInUserId)->orderBy('updated_at','desc')->get();
+        $getAlarmnsData = Alarm::where('alarms.created_by',$getLoggedInUserId);
       }
+      $getAlarmnsData = $getAlarmnsData->orderBy('alarms.updated_at','desc')->get();
      
            
       if($getAlarmnsData->isNotEmpty()){
+        foreach($getAlarmnsData as $alarmVal){
+          $alarmVal->customer_name = DB::table('customers')->where('id',$alarmVal->customer_id)->value('company_name');
+          $alarmVal->agent_name = !empty($alarmVal->agent_id) ? DB::table('users')->where('id',$alarmVal->agent_id)->value('name') : 'N/A';
+          $alarmVal->time = date('H:i',strtotime($alarmVal->time));
+          $alarmVal->alarm_type = !empty(config('alarm_type')[$alarmVal->alarm_type]) ?config('alarm_type')[$alarmVal->alarm_type] : 'N/A' ;
+        }
           $response				=	array();
           $response["status"]		=	"success";
           $response["data"]		=	$getAlarmnsData;
@@ -727,6 +857,248 @@ class AlarmsController extends Controller{
         }
     
       
+    }
+
+    public function fetchAlarmDetail(Request $request){
+      if(!empty($request->id)){
+        $getAlarmDetails = Alarm::where('id',$request->id)->first();
+          if(!empty($getAlarmDetails)){
+            $getAlarmDetails->created_date = date('d-m-Y',strtotime($getAlarmDetails->created_at));
+            $getAlarmDetails->created_time = date('H:i',strtotime($getAlarmDetails->created_at));
+            $getuploadedFiles = ReportFile::where('report_id',$getAlarmDetails->id)->get();
+            if($getuploadedFiles->isNotEmpty()){
+              foreach($getuploadedFiles as $uploadedFileVal){
+                $uploadedFileVal->file_url = url('/uploads/reports').'/'.$uploadedFileVal->file;
+              }
+            }
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	$getAlarmDetails;
+              $response['uploaded_files'] = $getuploadedFiles;
+              $response["msg"]		=	trans("Data Found Successfully.");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }else{
+
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	(object)array();
+              $response["msg"]		=	trans("No Record Found");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }
+
+      }else{
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("The alarm id field is required.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+
+      }
+    }
+
+
+    public function addUser(Request $request){
+      $getLoggedInUserId = Auth::guard('api')->user()->id;
+      $formData	=	$request->all();
+      $response	=	array();
+      if(!empty($formData)){
+        $validator 					=	Validator::make(
+          $request->all(),
+          array(
+            'name'							=> 'required',
+            'email'                       => 'required',
+            'user_name'				            => 'required',
+            'phone_number'					    => 'required',
+            'user_role'                       => 'required',
+            'vehicle_registration_number'       => 'required',
+          )
+        );
+      
+        if ($validator->fails()){
+          $response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
+        }else{
+          $password     =     Str::random(8);
+          DB::beginTransaction();
+          $obj 									=  new User;
+          $obj->name 								=  $request->input('name');
+          $obj->email 								=  $request->input('email');
+          $obj->user_name 								=  $request->input('user_name');
+          $obj->phone_number 								=  $request->input('phone_number');
+          $obj->user_role 								=  $request->input('user_role');
+          $obj->vehicle_registration_number 								=  $request->input('vehicle_registration_number');
+          $obj->password                          =  Hash::make($password);
+          $obj->is_active                  =   1;
+          $obj->is_verified                =   1;
+           $obj->validate_string                =   '';
+         
+          $obj->save();
+          $userId  = $obj->id;
+                  
+
+          if($userId){
+              DB::commit();
+              
+              $getUsersData = User::orderBy('updated_at','desc')->get();
+            
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	$getUsersData;
+         
+              $response["msg"]		=	trans("User added successfully.");
+              
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }else{
+                DB::rollBack();
+                DB::commit();
+                $response				=	array();
+                $response["status"]		=	"error";
+                $response["data"]		=	(object)array();
+                $response["msg"]		=	trans("Something Went Wrong.");
+                $response["http_code"]	=	401;
+                return response()->json($response,200);
+          }
+          
+        }
+      }
+      return json_encode($response);
+    }
+
+    public function updateUser(Request $request){
+      if(!empty($request->id)){
+          $getLoggedInUserId = Auth::guard('api')->user()->id;
+          $formData	=	$request->all();
+          $response	=	array();
+          if(!empty($formData)){
+            $validator 					=	Validator::make(
+              $request->all(),
+              array(
+                'name'							=> 'required',
+                'email'                       => 'required',
+                'user_name'				            => 'required',
+                'phone_number'					    => 'required',
+                'user_role'                       => 'required',
+                'vehicle_registration_number'       => 'required',
+                
+
+              )
+            );
+          
+            if ($validator->fails()){
+              $response				=	$this->change_error_msg_layout($validator->errors()->getMessages());
+            }else{
+              
+              DB::beginTransaction();
+              $obj 									=  User::find($request->id);
+              $obj->name 								=  $request->input('name');
+              $obj->email 								=  $request->input('email');
+              $obj->user_name 								=  $request->input('user_name');
+              $obj->phone_number 								=  $request->input('phone_number');
+              $obj->user_role 								=  $request->input('user_role');
+              $obj->vehicle_registration_number 								=  $request->input('vehicle_registration_number');
+              
+              $obj->save();
+              $userId  = $obj->id;
+                      
+
+              if($userId){
+                  DB::commit();
+                  
+                  $getUsersData = User::orderBy('updated_at','desc')->get();
+                  $response				=	array();
+                  $response["status"]		=	"success";
+                  $response["data"]		=	$getUsersData;
+                  $response["msg"]		=	trans("User updated successfully.");
+                  $response["http_code"]	=	200;
+                  return response()->json($response,200);
+              }else{
+                    DB::rollBack();
+                    DB::commit();
+                    $response				=	array();
+                    $response["status"]		=	"error";
+                    $response["data"]		=	(object)array();
+                    $response["msg"]		=	trans("Something Went Wrong.");
+                    $response["http_code"]	=	401;
+                    return response()->json($response,200);
+              }
+              
+            }
+          }
+          return json_encode($response);
+        
+      }else{
+        $response				=	array();
+        $response["status"]		=	"error";
+        $response["data"]		=	(object)array();
+        $response["msg"]		=	trans("The alarm id field is required.");
+        $response["http_code"]	=	401;
+        return response()->json($response,200);
+
+      }
+    }
+
+    public function fetchUserDetail(Request $request){
+      if(!empty($request->id)){
+        $getUserDetails = User::where('id',$request->id)->first();
+          if(!empty($getUserDetails)){
+            $getUserDetails->created_date = date('d-m-Y',strtotime($getUserDetails->created_at));
+            $getUserDetails->created_time = date('H:i',strtotime($getUserDetails->created_at));
+            
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	$getUserDetails;
+              $response["msg"]		=	trans("Data Found Successfully.");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }else{
+
+              $response				=	array();
+              $response["status"]		=	"success";
+              $response["data"]		=	(object)array();
+              $response["msg"]		=	trans("No Record Found");
+              $response["http_code"]	=	200;
+              return response()->json($response,200);
+          }
+
+      }else{
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("The user id field is required.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+
+      }
+    }
+
+    public function fetchUsers(Request $request){
+      $getLoggedInUserId = Auth::guard('api')->user()->id;
+
+      $getUsersData = User::query();
+    
+      $getUsersData = $getUsersData->orderBy('users.updated_at','desc')->get();
+     
+           
+      if($getUsersData->isNotEmpty()){
+        
+          $response				=	array();
+          $response["status"]		=	"success";
+          $response["data"]		=	$getUsersData;
+          $response["msg"]		=	trans("Data Found Successfully.");
+          $response["http_code"]	=	200;
+          return response()->json($response,200);
+      }else{
+
+          $response				=	array();
+          $response["status"]		=	"success";
+          $response["data"]		=	array();
+          $response["msg"]		=	trans("No Records Found");
+          $response["http_code"]	=	200;
+          return response()->json($response,200);
+      }
     }
 
 
