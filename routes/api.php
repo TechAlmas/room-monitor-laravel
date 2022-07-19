@@ -49,5 +49,11 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::post('update-user',[AlarmsController::class,'updateUser']);
     Route::get('user-detail',[AlarmsController::class,'fetchUserDetail']);
     
+    Route::get('fetch-customers',[AlarmsController::class,'fetchCustomers']);
+    Route::post('add-customer',[AlarmsController::class,'addCustomer']);
+    Route::post('update-customer',[AlarmsController::class,'updateCustomer']);
+    Route::get('customer-detail',[AlarmsController::class,'fetchCustomerDetail']);
+
+    Route::get('email-report',[AlarmsController::class,'emailReport']);
 
 });
