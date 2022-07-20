@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\LoginController;
 use App\Http\Controllers\Api\AlarmsController;
+use App\Http\Controllers\Api\UsersController;
+use App\Http\Controllers\Api\CustomersController;
 
 /*
 |--------------------------------------------------------------------------
@@ -44,15 +46,15 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::post('upload-user-image',[AlarmsController::class,'uploadUserImage']);
     Route::get('alarm-detail',[AlarmsController::class,'fetchAlarmDetail']);
 
-    Route::get('fetch-users',[AlarmsController::class,'fetchUsers']);
-    Route::post('add-user',[AlarmsController::class,'addUser']);
-    Route::post('update-user',[AlarmsController::class,'updateUser']);
-    Route::get('user-detail',[AlarmsController::class,'fetchUserDetail']);
+    Route::get('fetch-users',[UsersController::class,'fetchUsers']);
+    Route::post('add-user',[UsersController::class,'addUser']);
+    Route::post('update-user',[UsersController::class,'updateUser']);
+    Route::get('user-detail',[UsersController::class,'fetchUserDetail']);
     
-    Route::get('fetch-customers',[AlarmsController::class,'fetchCustomers']);
-    Route::post('add-customer',[AlarmsController::class,'addCustomer']);
-    Route::post('update-customer',[AlarmsController::class,'updateCustomer']);
-    Route::get('customer-detail',[AlarmsController::class,'fetchCustomerDetail']);
+    Route::get('fetch-customers',[CustomersController::class,'fetchCustomers']);
+    Route::post('add-customer',[CustomersController::class,'addCustomer']);
+    Route::post('update-customer',[CustomersController::class,'updateCustomer']);
+    Route::get('customer-detail',[CustomersController::class,'fetchCustomerDetail']);
 
     Route::get('email-report',[AlarmsController::class,'emailReport']);
 
