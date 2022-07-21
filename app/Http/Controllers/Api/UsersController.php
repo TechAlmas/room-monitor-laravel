@@ -78,11 +78,29 @@ class UsersController extends Controller{
               return response()->json($response,200);
             }
           }
+
+          $obj->validate_string					=  md5($request->input('email').time().time());
           $obj->save();
           $userId  = $obj->id;
                   
 
           if($userId){
+
+            //SEND EMAIL
+              $fromEmail 		= config('settings.from_email');
+              $emailData          =  [ 
+                'name'       => $obj->name,
+                'username'   => $obj->user_name,
+                'email'      => $obj->email,
+                'password'   => $password,
+                'verifyLink' => env('FRONT_END_URL').'/verify_account/'.$obj->validate_string
+              ];
+              $subject 			=  "Verify account";
+              Mail::send('emails.verify_account', $emailData, function($message) use ($obj,$subject,$fromEmail) {
+                $message->to($obj->email, $obj->name)->subject($subject);   
+                $message->from($fromEmail,env('APP_NAME'));
+              });
+
               DB::commit();
               
               $getUsersData = User::orderBy('updated_at','desc')->get();
@@ -91,7 +109,7 @@ class UsersController extends Controller{
               $response["status"]		=	"success";
               $response["data"]		=	$getUsersData;
          
-              $response["msg"]		=	trans("User added successfully.");
+              $response["msg"]		=	trans("User added successfully and Verification email has been sent on his registered email address");
               
               $response["http_code"]	=	200;
               return response()->json($response,200);
@@ -229,6 +247,7 @@ class UsersController extends Controller{
             if(!empty($getUserDetails->user_image)){
               $getUserDetails->user_image_url = url('/uploads/users').'/'.$getUserDetails->user_image;
             }
+
               $response				=	array();
               $response["status"]		=	"success";
               $response["data"]		=	$getUserDetails;
@@ -265,7 +284,13 @@ class UsersController extends Controller{
      
            
       if($getUsersData->isNotEmpty()){
-        
+        foreach($getUsersData as $userVal){
+          if(!empty($userVal->user_image)){
+            $userVal->user_image_url = url('/uploads/users').'/'.$userVal->user_image;
+          }else{
+            $userVal->user_image_url = url('/assets/images').'/'.'user-img.png';
+          }
+        }
           $response				=	array();
           $response["status"]		=	"success";
           $response["data"]		=	$getUsersData;

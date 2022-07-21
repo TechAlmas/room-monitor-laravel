@@ -504,6 +504,7 @@ class AlarmsController extends Controller{
           $obj->type 								=  $request->input('type');
 
           $obj->alarm_status 								=  $request->input('alarm_status');
+         
 
           if($request->input('is_manager_contacted') == 1){
             $obj->manager_details 								=  $request->input('manager_details');
@@ -522,6 +523,10 @@ class AlarmsController extends Controller{
                   
 
           if($userId){
+            if($request->alarm_status == 'completed'){
+              //Save Pdf Report 
+              $this->savePdfReport($userId);
+            }
               DB::commit();
               if(Auth::guard('api')->user()->user_role == 'admin'){
 
@@ -599,7 +604,10 @@ class AlarmsController extends Controller{
               $obj->is_guest_reached 								=  $request->input('is_guest_reached');
               $obj->comments 								=  $request->input('comments');
               $obj->type 								=  $request->input('type');
-
+              if(!empty($request->alarm_status)){
+                $obj->alarm_status 								=  $request->input('alarm_status');
+                
+              }
               if($request->input('is_manager_contacted') == 1){
                 $obj->manager_details 								=  $request->input('manager_details');
               }else{
@@ -625,6 +633,10 @@ class AlarmsController extends Controller{
                       
 
               if($userId){
+                if(!empty($request->alarm_status) && $request->alarm_status == 'completed'){
+                  //Save Pdf Report 
+                  $this->savePdfReport($userId);
+                }
                   DB::commit();
                   if(Auth::guard('api')->user()->user_role == 'admin'){
 
