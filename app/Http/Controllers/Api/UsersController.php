@@ -33,7 +33,7 @@ class UsersController extends Controller{
             'user_name'				            => 'required|unique:users',
             'phone_number'					    => 'required',
             'user_role'                       => 'required',
-            'vehicle_registration_number'       => ['required','unique:users','regex:/^(?!ss|ww|.[iou]|[iou].)[a-z]{2}[-\s]?\d{3}[-\s]?(?!ss|ww|.[iou]|[iou].)[a-z]{2}$/i'],
+            // 'vehicle_registration_number'       => ['required','unique:users','regex:/^(?!ss|ww|.[iou]|[iou].)[a-z]{2}[-\s]?\d{3}[-\s]?(?!ss|ww|.[iou]|[iou].)[a-z]{2}$/i'],
           )
         );
       
@@ -49,7 +49,7 @@ class UsersController extends Controller{
           $obj->user_name 								=  $request->input('user_name');
           $obj->phone_number 								=  $request->input('phone_number');
           $obj->user_role 								=  $request->input('user_role');
-          $obj->vehicle_registration_number 								=  $request->input('vehicle_registration_number');
+          $obj->vehicle_registration_number 								=  !empty($request->input('vehicle_registration_number')) ? $request->input('vehicle_registration_number') : '' ;
           $obj->password                          =  Hash::make($password);
           $obj->is_active                  =   1;
           $obj->is_verified                =   1;
@@ -143,7 +143,7 @@ class UsersController extends Controller{
                 'user_name'				            => 'required|unique:users,user_name,'.$request->id,
                 'phone_number'					    => 'required',
                 'user_role'                       => 'required',
-                'vehicle_registration_number'       => ['required','unique:users,vehicle_registration_number,'.$request->id,'regex:/^(?!ss|ww|.[iou]|[iou].)[a-z]{2}[-\s]?\d{3}[-\s]?(?!ss|ww|.[iou]|[iou].)[a-z]{2}$/i']
+                // 'vehicle_registration_number'       => ['required','unique:users,vehicle_registration_number,'.$request->id,'regex:/^(?!ss|ww|.[iou]|[iou].)[a-z]{2}[-\s]?\d{3}[-\s]?(?!ss|ww|.[iou]|[iou].)[a-z]{2}$/i']
                 
               )
             );
@@ -159,7 +159,7 @@ class UsersController extends Controller{
               $obj->user_name 								=  $request->input('user_name');
               $obj->phone_number 								=  $request->input('phone_number');
               $obj->user_role 								=  $request->input('user_role');
-              $obj->vehicle_registration_number 								=  $request->input('vehicle_registration_number');
+              $obj->vehicle_registration_number 								= !empty($request->input('vehicle_registration_number')) ? $request->input('vehicle_registration_number') : '' ;
 
               
               if(!empty($request->user_image)){
