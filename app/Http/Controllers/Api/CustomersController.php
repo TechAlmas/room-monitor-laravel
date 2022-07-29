@@ -28,16 +28,16 @@ class CustomersController extends Controller{
         $validator 					=	Validator::make(
           $request->all(),
           array(
-            'company_name'							=> 'required',
+            // 'company_name'							=> 'required',
             'alias'                       => 'required',
             'date'				            => 'required',
-            'vat'					    => ['required','regex:/^(FR)?[0-9A-Z]{2}[0-9]{9}$/i'],
-            'iban'                       => ['required','regex:/^FR\d{12}[A-Z0-9]{11}\d{2}$/i'],
+            // 'vat'					    => ['required','regex:/^(FR)?[0-9A-Z]{2}[0-9]{9}$/i'],
+            // 'iban'                       => ['required','regex:/^FR\d{12}[A-Z0-9]{11}\d{2}$/i'],
             'origin'       => 'required',
-            'gocardless_id'       => 'required',
-            'accounting_id'       => 'required',
-            'subscription'       => 'required',
-            'contact'       => 'required',
+            // 'gocardless_id'       => 'required',
+            // 'accounting_id'       => 'required',
+            // 'subscription'       => 'required',
+            // 'contact'       => 'required',
             'username'       => 'required|unique:customers',
             'phone_number'       => 'required',
             'billing_email'       => 'required',
@@ -52,16 +52,16 @@ class CustomersController extends Controller{
           $password     =     Str::random(8);
           DB::beginTransaction();
           $obj 									=  new Customer;
-          $obj->company_name 								=  $request->input('company_name');
+          $obj->company_name 								=  !empty($request->input('company_name')) ? $request->input('company_name') : '';
           $obj->alias 								=  $request->input('alias');
           $obj->date 								=  date('Y-m-d',strtotime($request->input('date')));
-          $obj->vat 								=  $request->input('vat');
-          $obj->iban 								=  $request->input('iban');
+          $obj->vat 								=  !empty($request->input('vat')) ? $request->input('vat') : '';
+          $obj->iban 								=  !empty($request->input('iban')) ? $request->input('iban') : '';
           $obj->origin 								=  $request->input('origin');
-          $obj->gocardless_id 								=  $request->input('gocardless_id');
-          $obj->accounting_id 								=  $request->input('accounting_id');
-          $obj->subscription 								=  $request->input('subscription');
-          $obj->contact 								=  $request->input('contact');
+          $obj->gocardless_id 								=  !empty($request->input('gocardless_id')) ? $request->input('gocardless_id') : '';
+          $obj->accounting_id 								=  !empty($request->input('accounting_id')) ? $request->input('accounting_id') : '';
+          $obj->subscription 								=  !empty($request->input('subscription')) ? $request->input('subscription') : '';
+          $obj->contact 								=  !empty($request->input('contact')) ? $request->input('contact') : '';
           $obj->username 								=  $request->input('username');
           $obj->phone_number 								=  $request->input('phone_number');
           $obj->billing_email 								=  $request->input('billing_email');
@@ -109,16 +109,16 @@ class CustomersController extends Controller{
             $validator 					=	Validator::make(
               $request->all(),
               array(
-                'company_name'							=> 'required',
+                // 'company_name'							=> 'required',
                 'alias'                       => 'required',
                 'date'				            => 'required',
-                'vat'					    => ['required','regex:/^(FR)?[0-9A-Z]{2}[0-9]{9}$/i'],
-                'iban'                       => ['required','regex:/^FR\d{12}[A-Z0-9]{11}\d{2}$/i'],
+                // 'vat'					    => ['required','regex:/^(FR)?[0-9A-Z]{2}[0-9]{9}$/i'],
+                // 'iban'                       => ['required','regex:/^FR\d{12}[A-Z0-9]{11}\d{2}$/i'],
                 'origin'       => 'required',
-                'gocardless_id'       => 'required',
-                'accounting_id'       => 'required',
-                'subscription'       => 'required',
-                'contact'       => 'required',
+                // 'gocardless_id'       => 'required',
+                // 'accounting_id'       => 'required',
+                // 'subscription'       => 'required',
+                // 'contact'       => 'required',
                 'username'				            => 'required|unique:customers,username,'.$request->id,
                 'phone_number'       => 'required',
                 'billing_email'       => 'required',
@@ -132,16 +132,16 @@ class CustomersController extends Controller{
               
               DB::beginTransaction();
               $obj 									=  Customer::find($request->id);
-              $obj->company_name 								=  $request->input('company_name');
+              $obj->company_name 								=  !empty($request->input('company_name')) ? $request->input('company_name') : '';
               $obj->alias 								=  $request->input('alias');
               $obj->date 								=  date('Y-m-d',strtotime($request->input('date')));
-              $obj->vat 								=  $request->input('vat');
-              $obj->iban 								=  $request->input('iban');
+              $obj->vat 								=  !empty($request->input('vat')) ? $request->input('vat') : '';
+              $obj->iban 								=  !empty($request->input('iban')) ? $request->input('iban') : '';
               $obj->origin 								=  $request->input('origin');
-              $obj->gocardless_id 								=  $request->input('gocardless_id');
-              $obj->accounting_id 								=  $request->input('accounting_id');
-              $obj->subscription 								=  $request->input('subscription');
-              $obj->contact 								=  $request->input('contact');
+              $obj->gocardless_id 								=  !empty($request->input('gocardless_id')) ? $request->input('gocardless_id') : '';
+              $obj->accounting_id 								=  !empty($request->input('accounting_id')) ? $request->input('accounting_id') : '';
+              $obj->subscription 								=  !empty($request->input('subscription')) ? $request->input('subscription') : '';
+              $obj->contact 								=  !empty($request->input('contact')) ? $request->input('contact') : '';
               $obj->username 								=  $request->input('username');
               $obj->phone_number 								=  $request->input('phone_number');
               $obj->billing_email 								=  $request->input('billing_email');
