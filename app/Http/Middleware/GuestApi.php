@@ -9,7 +9,7 @@ use DB;
 use Config;
 use Input;
 use Illuminate\Http\Request;
-use App;
+use App,Hash;
 use App\Model\MobileApiLog;
 
 class GuestApi
@@ -32,7 +32,7 @@ class GuestApi
 
       if($request->path() == 'api/upload-customers-csv' || $request->path() == 'api/upload-rooms-csv'){
         if(!empty($request->verify_string)){
-          if($request->verify_string != config('settings.verify_string') ){
+          if(!Hash::check($request->verify_string,config('settings.verify_string'))){
             $response				=	array();
             $response["status"]		=	"error";
             $response["data"]		=	(object)array();
