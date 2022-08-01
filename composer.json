@@ -13,8 +13,10 @@
         "laravel/passport": "^10.4",
         "laravel/sanctum": "^2.14.1",
         "laravel/tinker": "^2.7",
+        "maatwebsite/excel": "^3.1",
         "mpdf/mpdf": "v8.0.17",
-        "psr/log": "v2.*"
+        "psr/log": "v2.*",
+        "psr/simple-cache": "2.0"
     },
     "require-dev": {
         "fakerphp/faker": "^1.9.1",
