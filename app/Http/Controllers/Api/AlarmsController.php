@@ -878,6 +878,8 @@ class AlarmsController extends Controller{
             $getAlarmDetails->created_time = date('H:i',strtotime($getAlarmDetails->created_at));
             $getAlarmDetails->customer_name = DB::table('customers')->where('id',$getAlarmDetails->customer_id)->value('company_name');
             $getAlarmDetails->agent_name = DB::table('users')->where('id',$getAlarmDetails->agent_id)->value('name');
+            $getRoomName = Room::where('id',$getAlarmDetails->room_name)->value('username'); 
+            $getAlarmDetails->room_name = !empty($getRoomName) ? $getRoomName : '';
             // $getAlarmDetails->alarm_type = !empty(config('alarm_type')[$getAlarmDetails->alarm_type]) ?config('alarm_type')[$getAlarmDetails->alarm_type] : 'N/A' ;
 
             if(!empty($getAlarmDetails->pdf_file)){
@@ -925,6 +927,8 @@ class AlarmsController extends Controller{
          if(!empty($getData)){
           $getData->customer_name = DB::table('customers')->where('id',$getData->customer_id)->value('company_name');
           $getData->agent_name = DB::table('users')->where('id',$getData->agent_id)->value('name');
+          $getRoomName = Room::where('id',$getData->room_name)->value('username'); 
+            $getData->room_name = !empty($getRoomName) ? $getRoomName : '';
           // $getData->alarm_type = !empty(config('alarm_type')[$getData->alarm_type]) ?config('alarm_type')[$getData->alarm_type] : 'N/A' ;
           
           $fromEmail 		= config('settings.from_email');
@@ -959,6 +963,8 @@ class AlarmsController extends Controller{
       if(!empty($getData)){
         $getData->customer_name = DB::table('customers')->where('id',$getData->customer_id)->value('company_name');
         $getData->agent_name = DB::table('users')->where('id',$getData->agent_id)->value('name');
+        $getRoomName = Room::where('id',$getData->room_name)->value('username'); 
+        $getData->room_name = !empty($getRoomName) ? $getRoomName : '';
         // $getData->alarm_type = !empty(config('alarm_type')[$getData->alarm_type]) ?config('alarm_type')[$getData->alarm_type] : 'N/A' ;
         $filePath					=	public_path('/uploads/pdf/').$getData->pdf_file;
           //Remove uploaded file from directory if exists
