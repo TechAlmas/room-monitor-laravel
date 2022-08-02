@@ -9,7 +9,7 @@ use DB;
 use Config;
 use Input;
 use Illuminate\Http\Request;
-use App;
+use App,Hash;
 use App\Model\MobileApiLog;
 
 class GuestApi
@@ -28,6 +28,26 @@ class GuestApi
         App::setLocale($request->header('Accept-Language'));
       }else{
         App::setLocale("en");
+      }
+
+      if($request->path() == 'api/upload-customers-csv' || $request->path() == 'api/upload-rooms-csv'){
+        if(!empty($request->verify_string)){
+          if(!Hash::check($request->verify_string,config('settings.verify_string'))){
+            $response				=	array();
+            $response["status"]		=	"error";
+            $response["data"]		=	(object)array();
+            $response["msg"]		=	trans("You are not authorized to access this api.");
+            $response["http_code"]	=	401;
+            return response()->json($response,200);
+          }
+        }else{
+          $response				=	array();
+          $response["status"]		=	"error";
+          $response["data"]		=	(object)array();
+          $response["msg"]		=	trans("You are not authorized to access this api.");
+          $response["http_code"]	=	401;
+          return response()->json($response,200);
+        }
       }
 		
 		return $next($request);

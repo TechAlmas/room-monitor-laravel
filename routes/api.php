@@ -27,6 +27,9 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\GuestApi']
     Route::get('verify-account/{validate_string}', [LoginController::class,'VerifyAccount'])->name('verifyAccount');
     Route::get('datatable-test', [AlarmsController::class,'datatableTestData']);
 
+    Route::post('upload-customers-csv',[CustomersController::class,'uploadCustomerCsv']);
+    Route::post('upload-rooms-csv',[CustomersController::class,'uploadRoomCsv']);
+
 });
 
 Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'], function(){
@@ -57,5 +60,7 @@ Route::group(['namespace'=>'Api','middleware' => 'App\Http\Middleware\AuthApi'],
     Route::get('customer-detail',[CustomersController::class,'fetchCustomerDetail']);
 
     Route::get('email-report',[AlarmsController::class,'emailReport']);
+
+    
 
 });

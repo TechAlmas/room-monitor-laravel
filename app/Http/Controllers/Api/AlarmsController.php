@@ -10,6 +10,7 @@ use App\Models\AlarmImport;
 use App\Models\ReportFile;
 use App\Models\Customer;
 use App\Models\Alarm;
+use App\Models\Room;
 use Illuminate\Support\Facades\Auth;
 use Str,Mail;
 use Validator; 
@@ -679,11 +680,13 @@ class AlarmsController extends Controller{
     public function dropdownManagers(){
       $agentsList = User::where('user_role','night_agents')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
       $customersList = Customer::select('id','alias as text')->where('status','!=','draft')->get();
+      $roomsList = Room::select('id','username as text','address')->get();
       $response				=	array();
       $response["status"]		=	"success";
       $response["data"]		=	(object)array();
       $response['agents_list'] = $agentsList;
       $response['customers_list'] = $customersList;
+      $response['rooms_list'] = $roomsList;
 
       $response["msg"]		=	trans("Data Found");
       $response["http_code"]	=	200;
@@ -709,6 +712,8 @@ class AlarmsController extends Controller{
           $alarmVal->agent_name = !empty($alarmVal->agent_id) ? DB::table('users')->where('id',$alarmVal->agent_id)->value('name') : 'N/A';
           $alarmVal->time = date('H:i',strtotime($alarmVal->time));
           $alarmVal->alarm_type = !empty(config('alarm_type')[$alarmVal->alarm_type]) ?config('alarm_type')[$alarmVal->alarm_type] : 'N/A' ;
+          $getRoomName = Room::where('id',$alarmVal->room_name)->value('username'); 
+          $alarmVal->room_name = !empty($getRoomName) ? $getRoomName : '';
         }
           $response				=	array();
           $response["status"]		=	"success";
@@ -873,6 +878,8 @@ class AlarmsController extends Controller{
             $getAlarmDetails->created_time = date('H:i',strtotime($getAlarmDetails->created_at));
             $getAlarmDetails->customer_name = DB::table('customers')->where('id',$getAlarmDetails->customer_id)->value('company_name');
             $getAlarmDetails->agent_name = DB::table('users')->where('id',$getAlarmDetails->agent_id)->value('name');
+            $getRoomName = Room::where('id',$getAlarmDetails->room_name)->value('username'); 
+            $getAlarmDetails->room_name = !empty($getRoomName) ? $getRoomName : '';
             // $getAlarmDetails->alarm_type = !empty(config('alarm_type')[$getAlarmDetails->alarm_type]) ?config('alarm_type')[$getAlarmDetails->alarm_type] : 'N/A' ;
 
             if(!empty($getAlarmDetails->pdf_file)){
@@ -920,6 +927,8 @@ class AlarmsController extends Controller{
          if(!empty($getData)){
           $getData->customer_name = DB::table('customers')->where('id',$getData->customer_id)->value('company_name');
           $getData->agent_name = DB::table('users')->where('id',$getData->agent_id)->value('name');
+          $getRoomName = Room::where('id',$getData->room_name)->value('username'); 
+            $getData->room_name = !empty($getRoomName) ? $getRoomName : '';
           // $getData->alarm_type = !empty(config('alarm_type')[$getData->alarm_type]) ?config('alarm_type')[$getData->alarm_type] : 'N/A' ;
           
           $fromEmail 		= config('settings.from_email');
@@ -954,6 +963,8 @@ class AlarmsController extends Controller{
       if(!empty($getData)){
         $getData->customer_name = DB::table('customers')->where('id',$getData->customer_id)->value('company_name');
         $getData->agent_name = DB::table('users')->where('id',$getData->agent_id)->value('name');
+        $getRoomName = Room::where('id',$getData->room_name)->value('username'); 
+        $getData->room_name = !empty($getRoomName) ? $getRoomName : '';
         // $getData->alarm_type = !empty(config('alarm_type')[$getData->alarm_type]) ?config('alarm_type')[$getData->alarm_type] : 'N/A' ;
         $filePath					=	public_path('/uploads/pdf/').$getData->pdf_file;
           //Remove uploaded file from directory if exists

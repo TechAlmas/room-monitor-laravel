@@ -11,5 +11,9 @@ class Customer extends Authenticatable
     use HasApiTokens, Notifiable;
     protected $table = 'customers';
 
+    protected $fillable = [
+        'company_name', 'alias', 'date', 'vat', 'iban', 'origin', 'gocardless_id', 'accounting_id', 'subscription', 'contact', 'username', 'phone_number', 'billing_email','reports_email','status'
+    ];
+
     
 }
