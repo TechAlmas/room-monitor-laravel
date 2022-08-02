@@ -10,6 +10,7 @@ use App\Models\AlarmImport;
 use App\Models\ReportFile;
 use App\Models\Customer;
 use App\Models\Alarm;
+use App\Models\Room;
 use Illuminate\Support\Facades\Auth;
 use Str,Mail;
 use Validator; 
@@ -679,11 +680,13 @@ class AlarmsController extends Controller{
     public function dropdownManagers(){
       $agentsList = User::where('user_role','night_agents')->where('is_active',1)->where('is_deleted',0)->where('is_verified',1)->select('id','name as text')->get();
       $customersList = Customer::select('id','alias as text')->where('status','!=','draft')->get();
+      $roomsList = Room::select('id','username as text','address')->get();
       $response				=	array();
       $response["status"]		=	"success";
       $response["data"]		=	(object)array();
       $response['agents_list'] = $agentsList;
       $response['customers_list'] = $customersList;
+      $response['rooms_list'] = $roomsList;
 
       $response["msg"]		=	trans("Data Found");
       $response["http_code"]	=	200;
