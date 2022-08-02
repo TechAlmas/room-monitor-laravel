@@ -712,6 +712,8 @@ class AlarmsController extends Controller{
           $alarmVal->agent_name = !empty($alarmVal->agent_id) ? DB::table('users')->where('id',$alarmVal->agent_id)->value('name') : 'N/A';
           $alarmVal->time = date('H:i',strtotime($alarmVal->time));
           $alarmVal->alarm_type = !empty(config('alarm_type')[$alarmVal->alarm_type]) ?config('alarm_type')[$alarmVal->alarm_type] : 'N/A' ;
+          $getRoomName = Room::where('id',$alarmVal->room_name)->value('username'); 
+          $alarmVal->room_name = !empty($getRoomName) ? $getRoomName : '';
         }
           $response				=	array();
           $response["status"]		=	"success";
