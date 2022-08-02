@@ -11,6 +11,8 @@ class Room extends Authenticatable
     use HasApiTokens, Notifiable;
     protected $table = 'rooms';
 
-    
+    protected $fillable = [
+        'username', 'address'
+    ];
     
 }

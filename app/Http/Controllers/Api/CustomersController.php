@@ -13,6 +13,8 @@ use Str,Mail;
 use Validator; 
 use Helper,Hash,File,Config,DB,PDF;
 use Excel;
+use App\Imports\RoomsImport;
+use App\Imports\CustomersImport;
 class CustomersController extends Controller{
 
 
@@ -253,11 +255,9 @@ class CustomersController extends Controller{
     public function uploadCustomerCsv(Request $request)
     { 
       if($request->hasFile('customer_file')){
-        $path = $request->file('customer_file')->getRealPath();
-        $fileExtension = $request->file('customer_file')->getClientOriginalExtension();
-
-        $formats = ['csv'];
-        if (! in_array($fileExtension, $formats)) {
+        $extension = $request->file('customer_file')->getClientOriginalExtension();
+        $formats = ['csv','xlsx'];
+        if (! in_array($extension, $formats)) {
           $response				=	array();
           $response["status"]		=	"error";
           $response["data"]		=	(object)array();
@@ -265,84 +265,34 @@ class CustomersController extends Controller{
           $response["http_code"]	=	401;
           return response()->json($response,200);
         }
-        $records = array_map('str_getcsv', file($path));
-
-        if (! count($records) > 0) {
+        $fileName					=	time().'-customer-csv.'.$extension;
+        $folderPath					=	public_path('/uploads/csv/');
+        if(!File::exists($folderPath)) {
+          File::makeDirectory($folderPath, $mode = 0777,true);
+        }
+        if(!$request->file('customer_file')->move($folderPath, $fileName)){
           $response				=	array();
           $response["status"]		=	"error";
           $response["data"]		=	(object)array();
-          $response["msg"]		=	trans("The file should have atleast one record to upload.");
+          $response["msg"]		=	trans("Something went wrong while loading the file");
           $response["http_code"]	=	401;
           return response()->json($response,200);
         }
-        // Remove the header column
-        array_shift($records);
+        $import = new CustomersImport;
+        Excel::import($import, $folderPath.$fileName);
 
-        foreach ($records as $record) {
-            // Decode unwanted html entities
-            $record =  array_map("html_entity_decode", $record);
-
-            // Get the clean data
-            $this->rows[] = $this->clear_encoding_str($record);
-        }
-        $duplicateAccountIdArr = [];
-        foreach ($this->rows as $data) {
-            if(!empty($data[7])){
-
-              $checkIfAccountingIdAlreadyExists = Customer::where('accounting_id',$data[7])->first();
-              if(!empty($checkIfAccountingIdAlreadyExists)){
-                $filename = time().'-'.$checkIfAccountingIdAlreadyExists->accounting_id.'.csv';
-                $filePath = public_path().'/'.$filename;
-                if(\File::exists($filePath)){
-                  $f = fopen($filePath, 'a');
-                  $data = [
-                    [!empty($data[0]) ? $data[0] : '', !empty($data[1]) ? $data[1] : '', !empty($data[2]) ? $data[2]: '', !empty($data[3]) ? preg_replace('/\s+/', '', $data[3]): '', !empty($data[4]) ? preg_replace('/\s+/', '', $data[4]): '', !empty($data[5]) ? $data[5]: '', !empty($data[6]) ? $data[6]: '', !empty($data[7]) ? $data[7]: '', !empty($data[8]) ? $data[8]: '', !empty($data[9]) ? $data[9]: '', !empty($data[10]) ? $data[10]: '',!empty($data[11]) ? $data[11]: '',!empty($data[12]) ? $data[12]: '',!empty($data[13]) ? $data[13]: '']
-                  ];
-                }else{ 
-                  $f = fopen($filePath, 'w');
-                  $data = [
-                    ['Company Name', 'Alias', 'Date', 'VAT', 'IBAN', 'Origin', 'GoCardless ID', 'Accounting ID', 'Subscription', 'Contact', 'Username', 'Phone', 'Billing Email', 'Reports Email'],
-                    [!empty($data[0]) ? $data[0] : '', !empty($data[1]) ? $data[1] : '', !empty($data[2]) ? $data[2]: '', !empty($data[3]) ? preg_replace('/\s+/', '', $data[3]): '', !empty($data[4]) ? preg_replace('/\s+/', '', $data[4]): '', !empty($data[5]) ? $data[5]: '', !empty($data[6]) ? $data[6]: '', !empty($data[7]) ? $data[7]: '', !empty($data[8]) ? $data[8]: '', !empty($data[9]) ? $data[9]: '', !empty($data[10]) ? $data[10]: '',!empty($data[11]) ? $data[11]: '',!empty($data[12]) ? $data[12]: '',!empty($data[13]) ? $data[13]: '']
-                  ];
-                  $duplicateAccountIdArr[] = url('/').'/'.$filename;
-                }
-                foreach ($data as $row) {
-                  fputcsv($f, $row);
-                }
-
-                fclose($f);
-
-              }else{
-                
-                $obj 									=  new Customer;
-                $obj->company_name 								=  !empty($data[0]) ? $data[0] : '';
-                $obj->alias 								=  !empty($data[1]) ? $data[1] : '';
-                $obj->date 								=  !empty($data[2]) ? $data[2] : '';
-                $obj->vat 								=  !empty($data[3]) ? preg_replace('/\s+/', '', $data[3]) : '';
-                $obj->iban 								=  !empty($data[4]) ? preg_replace('/\s+/', '', $data[4]): '';
-                $obj->origin 								=  !empty($data[5]) ? $data[5] : '';
-                $obj->gocardless_id 								=  !empty($data[6]) ? $data[6] : '';
-                $obj->accounting_id 								=  !empty($data[7]) ? $data[7] : '';
-                $obj->subscription 								=  !empty($data[8]) ? $data[8] : '';
-                $obj->contact 								=  !empty($data[9]) ? $data[9] : '';
-                $obj->username 								=  !empty($data[10]) ? $data[10] : '';
-                $obj->phone_number 								=  !empty($data[11]) ? $data[11] : '';
-                $obj->billing_email 								=  !empty($data[12]) ? $data[12] : '';
-                $obj->reports_email 								=  !empty($data[13]) ? $data[13] :  '';
-                $obj->status 								=  'completed';
-                
-                $obj->save();
-              }
+        if(\File::exists($folderPath.$fileName)){
             
-            }
+          \File::delete($folderPath.$fileName);
+      
         }
-
+        $duplicateAccountIdArr = $import->duplicateAccountIdArr;
 
         $response				=	array();
         $response["status"]		=	"success";
         $response["data"]		=	(object)array();
+        $response["duplicate_accounts"]		=	$duplicateAccountIdArr;
         $response["msg"]		=	trans("Customers Uploaded Successfully.");
-        $response["duplicate_records"]		=	$duplicateAccountIdArr;
         $response["http_code"]	=	200;
         return response()->json($response,200);
       }else{
@@ -353,18 +303,16 @@ class CustomersController extends Controller{
         $response["http_code"]	=	401;
         return response()->json($response,200);
       }
-        
       
     }
+
     public function uploadRoomCsv(Request $request)
     { 
       // print_r($request->all());die;
       if($request->hasFile('room_file')){
-        $path = $request->file('room_file')->getRealPath();
-        $fileExtension = $request->file('room_file')->getClientOriginalExtension();
-
-        $formats = ['csv'];
-        if (! in_array($fileExtension, $formats)) {
+        $extension = $request->file('room_file')->getClientOriginalExtension();
+        $formats = ['csv','xlsx'];
+        if (! in_array($extension, $formats)) {
           $response				=	array();
           $response["status"]		=	"error";
           $response["data"]		=	(object)array();
@@ -372,38 +320,27 @@ class CustomersController extends Controller{
           $response["http_code"]	=	401;
           return response()->json($response,200);
         }
-        $records = array_map('str_getcsv', file($path));
-
-        if (! count($records) > 0) {
+        $fileName					=	time().'-room-csv.'.$extension;
+        $folderPath					=	public_path('/uploads/csv/');
+        if(!File::exists($folderPath)) {
+          File::makeDirectory($folderPath, $mode = 0777,true);
+        }
+        if(!$request->file('room_file')->move($folderPath, $fileName)){
           $response				=	array();
           $response["status"]		=	"error";
           $response["data"]		=	(object)array();
-          $response["msg"]		=	trans("The file should have atleast one record to upload.");
+          $response["msg"]		=	trans("Something went wrong while loading the file");
           $response["http_code"]	=	401;
           return response()->json($response,200);
         }
-        // Remove the header column
-        array_shift($records);
+        
+        Excel::import(new RoomsImport, $folderPath.$fileName);
 
-        foreach ($records as $record) {
-            // Decode unwanted html entities
-            $record =  array_map("html_entity_decode", $record);
-
-            // Get the clean data
-            $this->rows[] = $this->clear_encoding_str($record);
-        }
-        $duplicateAccountIdArr = [];
-        foreach ($this->rows as $data) {
-           if(!empty($data[0]) || !empty($data[1])){
+        if(\File::exists($folderPath.$fileName)){
             
-             $obj 									=  new Room;
-             $obj->username 								=  !empty($data[0]) ? $data[0] : '';
-             $obj->address 								=  !empty($data[1]) ? $data[1] : '';
-            $obj->save();
-           }
-            
+          \File::delete($folderPath.$fileName);
+      
         }
-
 
         $response				=	array();
         $response["status"]		=	"success";
@@ -422,9 +359,7 @@ class CustomersController extends Controller{
         
       
     }
-
-   
-
+    
     private function clear_encoding_str($value)
     {
         if (is_array($value)) {
